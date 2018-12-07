@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 
 public class Main {
     final static long MOD = 1000000007;
+
     public static void main(String args[]) {
         FastScanner fs = new FastScanner();
         PrintWriter out = new PrintWriter(System.out);
@@ -23,22 +24,26 @@ public class Main {
 
         int two = fs.nextInt();
 
-        for(int i = 0; i < q; i++) {
-            int l = fs.nextInt();
-            int r = fs.nextInt();
+        for (int i = 0; i < q; i++) {
+            int l = fs.nextInt() - 1;
+            int r = fs.nextInt() - 1;
 
-            int sum[] = st.rsq(l,r);
+            int sum[] = st.rsq(l, r);
 
             long total = 0;
-            int range = (r-l+1);
-            for(int k = 0; k < sum.length; k++) {
-                int ones = sum[k];
-                int zeros = range - ones;
-                if(sum[k] != 0 && sum[k] != range) {
-                    long times =  ((range * (range-1) * (range - 2)) - (ones * (ones-1) * (ones-2)) - (zeros * (zeros-1) * (zeros-2))) / 6;
-                    total += times * modpow(2, k, MOD);
+            long range = (r - l + 1);
+            for (int k = 0; k < sum.length; k++) {
+                long ones = sum[k];
+                long zeros = range - ones;
+                long times = 0;
+                if (range >= 3) {
+                    if (sum[k] != 0) {
+                        times = (((range * (range - 1) * (range - 2))  - (zeros * (zeros - 1) * (zeros - 2))) / 6) - (((ones * (ones-1)) / 2) * zeros);
+                        total = modAdd(total, modMul(times, modpow(2, k, MOD), MOD), MOD);
+                    }
                 }
             }
+            out.println(total % MOD);
         }
 
         out.flush();
@@ -122,21 +127,36 @@ public class Main {
         }
     }
 
-    public static  long modpow(long num, long pow, long mod) {
+    public static long modpow(long num, long pow, long mod) {
         BigInteger bnum = BigInteger.valueOf(num);
         BigInteger bpow = BigInteger.valueOf(pow);
         BigInteger bmod = BigInteger.valueOf(mod);
         return bnum.modPow(bpow, bmod).longValue();
     }
+
+    public static long modMul(long num1, long num2, long mod) {
+        BigInteger bnum1 = BigInteger.valueOf(num1);
+        BigInteger bnum2 = BigInteger.valueOf(num2);
+        return bnum1.multiply(bnum2).mod(BigInteger.valueOf(mod)).longValue();
+    }
+
+    public static long modAdd(long num1, long num2, long mod) {
+        BigInteger bnum1 = BigInteger.valueOf(num1);
+        BigInteger bnum2 = BigInteger.valueOf(num2);
+        return bnum1.add(bnum2).mod(BigInteger.valueOf(mod)).longValue();
+    }
 }
+
 class SegmentTree {
 
     static int countBits(long number) {
-        return (int)(Math.log(number) / Math.log(2) + 1);
+        return (int) (Math.log(number) / Math.log(2) + 1);
     }
 
     public static boolean isKthBitSet(long n, int k) {
-        return  ((n & (1 << (k - 1))) >= 1);
+        BigInteger b = BigInteger.valueOf(n);
+        return b.testBit(k);
+        //return  ((n & (1 << (k - 1))) >= 1);
     }
 
     private Node[] heap;
@@ -156,15 +176,15 @@ class SegmentTree {
         heap[v].from = from;
         heap[v].to = from + size - 1;
 
-        if(size == 1) {
-            for(int i = 0; i < heap[v].set.length; i++) {
+        if (size == 1) {
+            for (int i = 0; i < heap[v].set.length; i++) {
                 heap[v].set[i] = isKthBitSet(array[from], i) ? 1 : 0;
             }
         } else {
             build(2 * v, from, size / 2);
             build(2 * v + 1, from + size / 2, size - size / 2);
-            for(int i = 0; i < heap[v].set.length; i++) {
-                heap[v].set[i] = heap[2*v].set[i] + heap[2*v+1].set[i];
+            for (int i = 0; i < heap[v].set.length; i++) {
+                heap[v].set[i] = heap[2 * v].set[i] + heap[2 * v + 1].set[i];
             }
         }
     }
@@ -178,7 +198,6 @@ class SegmentTree {
         return from1 <= from2 && to1 >= from2   //  (.[..)..] or (.[...]..)
                 || from1 >= from2 && from1 <= to2; // [.(..]..) or [..(..)..
     }
-
 
 
     public int[] rsq(int from, int to) {
@@ -200,7 +219,7 @@ class SegmentTree {
             for (int i = 0; i < leftSum.length; i++) sum[i] = leftSum[i] + rightSum[i];
             return sum;
         }
-        return new int[countBits((int)Math.pow(10, 12)+10)];
+        return new int[countBits((long) Math.pow(10, 12) + 2)];
     }
 
     static class Node {
@@ -209,9 +228,10 @@ class SegmentTree {
         int from;
         int to;
 
-        Node(){
-            set = new int[countBits((int)Math.pow(10,12)+10)];
+        Node() {
+            set = new int[countBits((long) Math.pow(10, 12) + 2)];
         }
+
         int size() {
             return to - from + 1;
         }
